@@ -1,5 +1,6 @@
 provider "aws" {
-  region = "us-east-1" 
+  region = "us-east-1"
+  profile = "personal-account" 
 }
 
 # create vpc
@@ -44,7 +45,7 @@ resource "aws_key_pair" "kp" {
   public_key = tls_private_key.pk.public_key_openssh
 
   provisioner "local-exec" { # Create a "myKey1.pem" to your computer!!
-    command = "echo '${tls_private_key.pk.private_key_pem}' > ./myKey1.pem"
+    command = "echo '${tls_private_key.pk.private_key_pem}' > ./myKey1.pem && chmod 600 ./myKey1.pem"
   }
 
 }
