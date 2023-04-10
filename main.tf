@@ -10,6 +10,47 @@ resource "aws_default_vpc" "default" {
   }
 }
 
+# Define the IAM role for Neptune loader
+resource "aws_iam_role" "neptune_loader_role" {
+  name = "NeptuneLoaderFromS3"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Define the policy that allows S3 read access
+resource "aws_iam_policy" "s3_read_policy" {
+  name = "S3ReadAccessForNeptuneLoader"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach the S3 read policy to the Neptune loader role
+resource "aws_iam_role_policy_attachment" "s3_read_attachment" {
+  policy_arn = aws_iam_policy.s3_read_policy.arn
+  role       = aws_iam_role.neptune_loader_role.name
+}
+
+
 ## ------ AWS Neptune Cluster  -------------------------------------------------
 resource "aws_neptune_cluster" "example" {
 
@@ -20,6 +61,7 @@ resource "aws_neptune_cluster" "example" {
   neptune_cluster_parameter_group_name = "default.neptune1.2"
   apply_immediately                   = true
   vpc_security_group_ids              = [ "${aws_security_group.neptune_example.id}" ]
+  iam_roles          = [aws_iam_role.neptune_loader_role.arn]
   serverless_v2_scaling_configuration {}
 
 }
@@ -33,6 +75,7 @@ resource "aws_neptune_cluster_instance" "example" {
   neptune_parameter_group_name = "default.neptune1.2"
   apply_immediately  = true
 }
+
 
 # Create an EC2 key pair for SSH access to the instance
 resource "tls_private_key" "pk" {
