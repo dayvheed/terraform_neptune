@@ -28,26 +28,11 @@ resource "aws_iam_role" "neptune_loader_role" {
   })
 }
 
-# Define the policy that allows S3 read access
-resource "aws_iam_policy" "s3_read_policy" {
-  name = "S3ReadAccessForNeptuneLoader"
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject"]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-# Attach the S3 read policy to the Neptune loader role
-resource "aws_iam_role_policy_attachment" "s3_read_attachment" {
-  policy_arn = aws_iam_policy.s3_read_policy.arn
-  role       = aws_iam_role.neptune_loader_role.name
+resource "aws_iam_policy_attachment" "s3_read_policy_attachment" {
+  name       = "AmazonS3ReadOnlyAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+  roles      = [aws_iam_role.neptune_loader_role.name]
 }
 
 
